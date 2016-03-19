@@ -5,7 +5,7 @@
 
 This is a 16 track Sample based Drum Machine built on a 32bit PIC (PIC32mx150f128b).
 
-The project is relativly simple in that it limits itself to using the PIC's internal Flash for sample storage and the built in OC PWM for output. 
+The project hardware is relatively simple in that it limits itself to using the PIC's internal Flash for sample storage and the built in OC PWM for output. 
 
 The Drum Machine has 16 tracks (instruments) of 16 steps and can save the song to one of 16 slots on a uSD card.
 
