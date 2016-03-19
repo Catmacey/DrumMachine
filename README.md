@@ -3,6 +3,8 @@
 
 ![DrumMachine](https://catmacey.files.wordpress.com/2013/08/img_36251.jpg?w=869)
 
+[Demo of features (Youtube)](https://www.youtube.com/watch?v=TWu0VHxkMRI)
+
 This is a 16 track Sample based Drum Machine built on a 32bit PIC (PIC32mx150f128b).
 
 The project hardware is relatively simple in that it limits itself to using the PIC's internal Flash for sample storage and the built in OC PWM for output. 
