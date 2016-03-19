@@ -1,0 +1,58 @@
+[Project ID]
+Signature=UE Proj: v.1
+[Project Information]
+Use Relative Directory=1
+Relative to Project File=1
+Include Sub Directories=1
+Project Tagfile=
+Project Wordfile=
+Filter=
+Create Tagfile=0
+[Files]
+0=main.c
+1=HardwareConfig.h
+2=spi.h
+3=spi.c
+4=interrupt.c
+5=mainloop.c
+6=mmc.c
+7=diskio.h
+8=ffconf.h
+9=saveLoadSong.c
+[Group]
+0=samples
+1=PIC Headers
+2=Libs
+[Group Filter]
+samples=*.h;*.hpp;*.hxx;
+[Files - samples]
+0=samples\808-BD1050-8bit-16khz.h
+1=samples\808-BD5025-8bit-16khz.h
+2=samples\808-CH-8bit-16khz.h
+3=samples\lin_clap-8bit-16khz.h
+4=samples\lin_cowbell-8bit-16khz.h
+5=samples\lin_snare1-8bit-16khz.h
+6=samples\Lin-Kick1-8bit-16khz.h
+7=samples\Lin-Kick4-8bit-16khz.h
+8=samples\lin-loTom-8bit-16khz.h
+9=samples\lin-medHat-8bit-16khz.h
+10=samples\lin-Ride-8bit-16khz.h
+11=samples\lin-snare8-8bit-16khz.h
+12=samples\Lin-Tamb-8bit-16khz.h
+13=samples\Lin-Tight-Hat-8bit-16khz.h
+14=samples\snare.h
+[Files - PIC Headers]
+0=C:\Program Files (x86)\Microchip\MPLAB C30\support\PIC24F\h\p24FJ48GA002.h
+1=C:\Program Files (x86)\Microchip\MPLAB C30\support\PIC24F\h\p24FJ64GA102.h
+2=C:\Program Files (x86)\Microchip\MPLAB C30\support\peripheral_24F\GenericTypeDefs.h
+[Files - Libs]
+0=maxim6957.c
+1=maxim6957.h
+2=nokia5110LCD.c
+3=nokia5110LCD.h
+4=xprintf.c
+5=xprintf.h
+6=ff.c
+7=ff.h
+8=cJSON.h
+9=cJSON.c

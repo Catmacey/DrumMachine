@@ -1,0 +1,120 @@
+Partlist exported from DrumMachine_Pic32_v1.2.sch at 19/03/2016 18:22:23
+
+Part       Value                    Device                   Package                Description                                                   MF MPN OC_FARNELL OC_NEWARK TP_SIGNAL_NAME
+3V3        PTR1PAD1-13              PTR1PAD1-13              P1-13                  TEST PIN                                                                                                
+AMP        ENABLE                   SWITCH-SPST-SMD-A        SWITCH-SPST-SMD-A      SPST Switch                                                                                             
+ATTEN      10k                      TRIM_EU-CA6V             CA6V                   POTENTIOMETER                                                                                           
+AUX                                 PINHD-1X3                1X03                   PIN HEADER                                                                                              
+BAT                                 PINHD-1X2                1X02                   PIN HEADER                                                                                              
+C1         10u                      C-EUC0805                C0805                  CAPACITOR, European symbol                                                                              
+C2         3.3u                     C-EUC0805                C0805                  CAPACITOR, European symbol                                                                              
+C3         1u                       C-EUC0805                C0805                  CAPACITOR, European symbol                                                                              
+C4         22u                      CPOL-EUSMCA              SMC_A                  POLARIZED CAPACITOR, European symbol                                                                    
+C5         47nF                     C-EUC0805                C0805                  CAPACITOR, European symbol                                                                              
+C6         1u                       CPOL-EU153CLV-0405       153CLV-0405            POLARIZED CAPACITOR, European symbol                                                                    
+C7         10uF                     CPOL-EUSMCA              SMC_A                  POLARIZED CAPACITOR, European symbol                                                                    
+C8         10n                      C-EUC0805                C0805                  CAPACITOR, European symbol                                                                              
+C9         10n                      C-EUC0805                C0805                  CAPACITOR, European symbol                                                                              
+C10        10n                      C-EUC0805                C0805                  CAPACITOR, European symbol                                                                              
+C11        1u                       C-EUC0805                C0805                  CAPACITOR, European symbol                                                                              
+C12        22u                      CPOL-EUSMCA              SMC_A                  POLARIZED CAPACITOR, European symbol                                                                    
+C13        100n                     C-EUC0805                C0805                  CAPACITOR, European symbol                                                                              
+C14        1u                       CPOL-EU153CLV-0405       153CLV-0405            POLARIZED CAPACITOR, European symbol                                                                    
+D1                                  DIODE-SOD-123            SOD-123                Various Diode Packages                                                                                  
+D2                                  DIODE-SOD-123            SOD-123                Various Diode Packages                                                                                  
+D3                                  DIODE-SOD-123            SOD-123                Various Diode Packages                                                                                  
+D4                                  DIODE-SOD-123            SOD-123                Various Diode Packages                                                                                  
+D5                                  DIODE-SOD-123            SOD-123                Various Diode Packages                                                                                  
+D6                                  DIODE-SOD-123            SOD-123                Various Diode Packages                                                                                  
+D7                                  DIODE-SOD-123            SOD-123                Various Diode Packages                                                                                  
+D8                                  DIODE-SOD-123            SOD-123                Various Diode Packages                                                                                  
+D9                                  DIODE-SOD-123            SOD-123                Various Diode Packages                                                                                  
+D10                                 DIODE-SOD-123            SOD-123                Various Diode Packages                                                                                  
+D11                                 DIODE-SOD-123            SOD-123                Various Diode Packages                                                                                  
+D12                                 DIODE-SOD-123            SOD-123                Various Diode Packages                                                                                  
+D13                                 DIODE-SOD-123            SOD-123                Various Diode Packages                                                                                  
+D14                                 DIODE-SOD-123            SOD-123                Various Diode Packages                                                                                  
+D15                                 DIODE-SOD-123            SOD-123                Various Diode Packages                                                                                  
+D16                                 DIODE-SOD-123            SOD-123                Various Diode Packages                                                                                  
+D17                                 DIODE-SOD-123            SOD-123                Various Diode Packages                                                                                  
+D18                                 DIODE-SOD-123            SOD-123                Various Diode Packages                                                                                  
+D19                                 DIODE-SOD-123            SOD-123                Various Diode Packages                                                                                  
+D20                                 DIODE-SOD-123            SOD-123                Various Diode Packages                                                                                  
+D21                                 DIODE-SOD-123            SOD-123                Various Diode Packages                                                                                  
+D22                                 DIODE-SOD-123            SOD-123                Various Diode Packages                                                                                  
+D23                                 DIODE-SOD-123            SOD-123                Various Diode Packages                                                                                  
+D25                                 DIODE-SOD-123            SOD-123                Various Diode Packages                                                                                  
+FLASH      AT45DB041B               AT45DB041B               SO08                                                                                                                           
+GAIN       10k                      TRIM_EU-CA6V             CA6V                   POTENTIOMETER                                                                                           
+GND        PTR1PAD1-13              PTR1PAD1-13              P1-13                  TEST PIN                                                                                                
+ICSP       CON_HEADER_PRG_PIC_ICSPB CON_HEADER_PRG_PIC_ICSPB HEADER_PRG_1X05_ICSP_B 5-pin PIC In Circuit Serial Programming header                                                          
+J1         POWER_JACKPTH            POWER_JACKPTH            POWER_JACK_PTH         Power Jack                                                                                              
+JP1        PRE-FILTER               JP1E                     JP1                    JUMPER                                                                                                  
+LCD        NOKIA-5110-BREAKOUT      NOKIA-5110-BREAKOUT      NOKIA-5110-BREAKOUT                                                                                                            
+LED1                                LEDCHIPLED_0805          CHIPLED_0805           LED                                                                                                     
+LED2                                LEDCHIPLED_0805          CHIPLED_0805           LED                                                                                                     
+LED3                                LEDCHIPLED_0805          CHIPLED_0805           LED                                                                                                     
+LED4                                LEDCHIPLED_0805          CHIPLED_0805           LED                                                                                                     
+LED5                                LEDCHIPLED_0805          CHIPLED_0805           LED                                                                                                     
+LED6                                LEDCHIPLED_0805          CHIPLED_0805           LED                                                                                                     
+LED7                                LEDCHIPLED_0805          CHIPLED_0805           LED                                                                                                     
+LED8                                LEDCHIPLED_0805          CHIPLED_0805           LED                                                                                                     
+LED9                                LEDCHIPLED_0805          CHIPLED_0805           LED                                                                                                     
+LED10                               LEDCHIPLED_0805          CHIPLED_0805           LED                                                                                                     
+LED11                               LEDCHIPLED_0805          CHIPLED_0805           LED                                                                                                     
+LED12                               LEDCHIPLED_0805          CHIPLED_0805           LED                                                                                                     
+LED13                               LEDCHIPLED_0805          CHIPLED_0805           LED                                                                                                     
+LED14                               LEDCHIPLED_0805          CHIPLED_0805           LED                                                                                                     
+LED15                               LEDCHIPLED_0805          CHIPLED_0805           LED                                                                                                     
+LED16                               LEDCHIPLED_0805          CHIPLED_0805           LED                                                                                                     
+LED_MENU                            LEDCHIPLED_0805          CHIPLED_0805           LED                                                                                                     
+LED_REPEAT                          LEDCHIPLED_0805          CHIPLED_0805           LED                                                                                                     
+LED_RUN                             LEDCHIPLED_0805          CHIPLED_0805           LED                                                                                                     
+MAX6957    MAX6957-20PORTAAI        MAX6957-20PORTAAI        SSOP28                 The MAX6957 is a compact, 4-wire (SPI) interfaced LED display                                           
+MENU                                ITT-PTS645SMD            ITT-PTS645SMD          ITT SWITCH                                                                                              
+P1         DEBUG_LCD_CS             1,6/0,81.2/0.5           1,2/0,5                THROUGH-HOLE PAD                                                                                        
+P1A        LCD CS                   1,6/0,81.2/0.5           1,2/0,5                THROUGH-HOLE PAD                                                                                        
+P2         DEBUG_LCD_D/c            1,6/0,81.2/0.5           1,2/0,5                THROUGH-HOLE PAD                                                                                        
+P2A                                 1,6/0,81.2/0.5           1,2/0,5                THROUGH-HOLE PAD                                                                                        
+PCB1       PCB_DP_RECTANGLE-80X100  PCB_DP_RECTANGLE-80X100  DP10080_V1             Dangerous Prototypes Standard Rectangular PCB sizes                                                     
+PIC32MX    PIC32MX150F128BSO        PIC32MX150F128BSO        SO-28                                                                                                                          
+POWER                               DX_MINI_SPDT             DX_MINI_SPDT_VERTICAL  SLIDING SWITCH SPDT                                                                                     
+R1         68k                      R-EU_R0805               R0805                  RESISTOR, European symbol                                                                               
+R2         10k                      R-EU_R0805               R0805                  RESISTOR, European symbol                                                                               
+R4         10k                      R-EU_R0805               R0805                  RESISTOR, European symbol                                                                               
+R5         390R                     R-EU_R0805               R0805                  RESISTOR, European symbol                                                                               
+R6         10k                      R-EU_R0805               R0805                  RESISTOR, European symbol                                                                               
+R7         330R                     R-EU_R0805               R0805                  RESISTOR, European symbol                                                                               
+R10        47k                      R-EU_R0805               R0805                  RESISTOR, European symbol                                                                               
+R11        47k                      R-EU_R0805               R0805                  RESISTOR, European symbol                                                                               
+R12        47k                      R-EU_R0805               R0805                  RESISTOR, European symbol                                                                               
+R13        47k                      R-EU_R0805               R0805                  RESISTOR, European symbol                                                                               
+R14        47k                      R-EU_R0805               R0805                  RESISTOR, European symbol                                                                               
+REPEAT                              ITT-PTS645SMD            ITT-PTS645SMD          ITT SWITCH                                                                                              
+RESET                               TINY_TACTILESMD          TINY_TACTILE_SMD       DIL/CODE SWITCH                                                                                         
+ROWS       Rows debug               PINHD-1X5                1X05                   PIN HEADER                                                                                              
+RUN                                 ITT-PTS645SMD            ITT-PTS645SMD          ITT SWITCH                                                                                              
+S1                                  ITT-PTS645SMD            ITT-PTS645SMD          ITT SWITCH                                                                                              
+S2                                  ITT-PTS645SMD            ITT-PTS645SMD          ITT SWITCH                                                                                              
+S3                                  ITT-PTS645SMD            ITT-PTS645SMD          ITT SWITCH                                                                                              
+S4                                  ITT-PTS645SMD            ITT-PTS645SMD          ITT SWITCH                                                                                              
+S5                                  ITT-PTS645SMD            ITT-PTS645SMD          ITT SWITCH                                                                                              
+S6                                  ITT-PTS645SMD            ITT-PTS645SMD          ITT SWITCH                                                                                              
+S7                                  ITT-PTS645SMD            ITT-PTS645SMD          ITT SWITCH                                                                                              
+S8                                  ITT-PTS645SMD            ITT-PTS645SMD          ITT SWITCH                                                                                              
+S9                                  ITT-PTS645SMD            ITT-PTS645SMD          ITT SWITCH                                                                                              
+S10                                 ITT-PTS645SMD            ITT-PTS645SMD          ITT SWITCH                                                                                              
+S11                                 ITT-PTS645SMD            ITT-PTS645SMD          ITT SWITCH                                                                                              
+S12                                 ITT-PTS645SMD            ITT-PTS645SMD          ITT SWITCH                                                                                              
+S13                                 ITT-PTS645SMD            ITT-PTS645SMD          ITT SWITCH                                                                                              
+S14                                 ITT-PTS645SMD            ITT-PTS645SMD          ITT SWITCH                                                                                              
+S15                                 ITT-PTS645SMD            ITT-PTS645SMD          ITT SWITCH                                                                                              
+S16                                 ITT-PTS645SMD            ITT-PTS645SMD          ITT SWITCH                                                                                              
+S18        JOYSTICK                 ALPS_SKQU_JOYSTICK       ALPS_SKQU_JOYSTICK     4 way mini joystick with center push button                                                             
+SIG        PTR1PAD1-13              PTR1PAD1-13              P1-13                  TEST PIN                                                                                                
+SPEAKER    SPEAKER                  PINHD-1X2                1X02                   PIN HEADER                                                                                              
+SPI        SPI Debug                MA05-2                   MA05-2                 PIN HEADER                                                           unknown    unknown                 
+TF         MICROSDCARD-SPI          MICROSDCARD-SPI          TCF001_MICROSD_SOCKET                                                                                                          
+TPA301     TPA301                   TPA301                   SO-08                  TPA301 350-mW Mono Class-AB Audio Amplifier                                                             
+U2         ASM1117-3.3              ASM1117-3.3              SOT223                 ICP006                                                                                                  
+U3                                  AUDIO-JACKPTH            STEREO_JACK3.5MM_PTH   3.5mm Audio Jack                                                                                        
