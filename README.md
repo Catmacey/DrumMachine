@@ -1,5 +1,5 @@
-DrumMachine - 16 step sample based
-==================================
+16 step sample based DrumMachine
+================================
 
 ![DrumMachine](https://catmacey.files.wordpress.com/2013/08/img_36251.jpg?w=869)
 
@@ -11,17 +11,17 @@ The Drum Machine has 16 tracks (instruments) of 16 steps and can save the song t
 
 Features;
 
-16 different instruments stored in Flash (Length dependant on sample quality/size).
-16 step patterns with 16 patterns per song.
-16 songs loaded and saved to FAT formatted uSD card.
-8 sample polyphony, mixed in software.
-10bit, 16khz instruments sampled from classic drum machines. (stored as 8bit log similar to uLaw)
-Samples can be "tuned" to playback faster/slower, louder quieter and can also have the in/out points set.
-Analog mono output filtered from an 10bit PWM signal.
-16 buttons for beat input plus 4 more and 4-way joystick for interface.
-20 leds driven by a Maxim 6957 LED driver to provide feedback.
-[Nokia 1202 B/W LCD](https://github.com/Catmacey/Nokia1202LCD-breakout) mounted on a breakout board displays user interface.
-Songs are stored as plain text in JSON format to allow some human readability.
+* 16 different instruments stored in Flash (Length dependant on sample quality/size).
+* 16 step patterns with 16 patterns per song.
+* 16 songs loaded and saved to FAT formatted uSD card.
+* 8 sample polyphony, mixed in software.
+* 10bit, 16khz instruments sampled from classic drum machines. (stored as 8bit log similar to uLaw)
+* Samples can be "tuned" to playback faster/slower, louder quieter and can also have the in/out points set.
+* Analog mono output filtered from an 10bit PWM signal.
+* 16 buttons for beat input plus 4 more and 4-way joystick for interface.
+* 20 leds driven by a Maxim 6957 LED driver to provide feedback.
+* [Nokia 1202 B/W LCD](https://github.com/Catmacey/Nokia1202LCD-breakout) mounted on a breakout board displays user interface.
+* Songs are stored as plain text in JSON format to allow some human readability.
 
 
 [More information is available on my blog.](https://catmacey.wordpress.com/tag/drum-machine/)
