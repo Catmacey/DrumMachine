@@ -19,7 +19,8 @@ Features : Updated 24 / 8 / 2019
 * 8 sample polyphony, mixed in software.
 * 10bit, 16khz instruments sampled from classic drum machines. (stored as 8bit log similar to uLaw)
 * Samples can be "tuned" to playback faster/slower, louder quieter and can also have the in/out points set.
-* "Jam Mode" to add some variety to your tracks.
+* "Jam Mode" to add some variety to your tracks by fading in/out each track as it plays.
+* Swing
 * Basic Reverb mode.
 * Analog mono output filtered from an 10bit PWM signal.
 * 16 buttons for beat input plus 4 more and 4-way joystick for interface.
