@@ -1,1 +1,0 @@
-sox -V ../lm1/AB*.wav -c 1 -b 8 -D -e signed-integer ../lm1/new_16kz_m.was lowpass 8k reverse silence  1 0.1 0 reverse rate 16k dither -a

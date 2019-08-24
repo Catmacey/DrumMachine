@@ -22,11 +22,13 @@
 //#define	SET	1
 //#define	CLEAR	0
 
-#define SYS_FREQ             (40000000ul)
-#define GetSystemClock()    SYS_FREQ
+//#define GetSystemClock()  (40000000ul)
+#define GetSystemClock()  (48000000ul)
+//#define GetSystemClock()  (60000000ul)
+//#define GetSystemClock()  (64000000ul)
 #define GetPeripheralClock()    (GetSystemClock() / (1 << OSCCONbits.PBDIV))
-#define TICKS_uS (SYS_FREQ / 1000000)/2   //sys clocks per micro second for core timer
-#define TICKS_mS (SYS_FREQ / 1000)/2   //sys clocks per milli second for core timer
+#define TICKS_uS (GetSystemClock() / 1000000)/2   //sys clocks per micro second for core timer
+#define TICKS_mS (GetSystemClock() / 1000)/2   //sys clocks per milli second for core timer
 
 
 //Matrix Columns RB0 - 7
@@ -57,7 +59,11 @@
 #define TX _LATB14
 #define PPS_TX  PPS_RP14
 
+//Spare GPIO (Used to be LCD D/C)
+#define DAC_CS _LATA3
+
 //SD Card
+#define SD_CS _LATB10
 #define SD_CS_ENABLE mPORTBClearBits(BIT_10);
 #define SD_CS_CLEAR mPORTBSetBits(BIT_10);
 
@@ -68,11 +74,16 @@
 // Hardware SPI
 // Manual CS between each byte, but could be modified to do bulk transfers.
 ///****************************************************
-#define LCD_DC 		_LATA3
 #define LCD_CS 		_LATB12
 
-#define LCD_CS_ENABLE mPORTBClearBits(BIT_12);
-#define LCD_CS_CLEAR mPORTBSetBits(BIT_12);
+#define LCD_CS_ENABLE() mPORTBClearBits(BIT_12)
+#define LCD_CS_CLEAR() mPORTBSetBits(BIT_12)
+
+#define SPI_CLK_HIGH() mPORTBSetBits(BIT_15)
+#define SPI_CLK_LOW() mPORTBClearBits(BIT_15)
+
+#define SPI_MOSI_HIGH() mPORTBSetBits(BIT_8)
+#define SPI_MOSI_LOW() mPORTBClearBits(BIT_8)
 
 
 //#define LCD_RST 	_LATB12 //Can be performed in hardware with R/C. saves pin
@@ -86,10 +97,7 @@
 ///****************************************************
 #define MAX6957_CS 		_LATA4
 
-//Some handy LED names
-#define LED_RUN MAX6957_ADDR_P26
-#define LED_REPEAT MAX6957_ADDR_P28
-#define LED_MENU MAX6957_ADDR_P30
-#define	LCD_BL MAX6957_ADDR_P15
+#define LCDTYPE_NOKIA_1202
+
 
 #endif

@@ -123,7 +123,9 @@
 /** P R O T O T Y P E S ******************************************************/
 void max6957_write(unsigned char command, unsigned char data);
 void max6957_config(unsigned char config);
-void max6957_setSegCurrent(unsigned char port, unsigned char value);
+void max6957_setPortCurrent(unsigned char port, unsigned char value);
+unsigned char max6957_getPortCurrent(unsigned char port);
+void max6957_setPortState(unsigned char port, unsigned char state);
 
 /*****************************************************************************
    V A R I A B L E S

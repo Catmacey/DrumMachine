@@ -12,18 +12,19 @@
 #include "HardwareConfig.h"
 #include <stdlib.h>
 #include <stdint.h>
-#include "song_saveload.h"
 #include "globals.h"
-//#include "cJSON.h"
-#include "ff.h"
-#include "diskio.h"
-#include "xprintf.h"
-#include "nokia5110LCD.h"
+#include "fatfs/ff.h"
+#include "fatfs/diskio.h"
+#include "libs/xprintf.h"
+#include "lcd/lcd.h"
+#include "screen.h"
+#include "json.h"
+#include "song_saveload.h"
 
 //File system vars
 uint32_t AccSize;			/* Work register for fs command */
 uint16_t AccFiles, AccDirs;
-FILINFO Finfo;
+//FILINFO file_info;
 #if _USE_LFN
 char Lfname[512];
 #endif
@@ -33,55 +34,6 @@ FATFS *fs;				/* Pointer to file system object */
 DIR dir;				/* Directory object */
 FIL file_obj;		/* File objects */
 
-/* JSON Types: */
-#define JSON_False 0
-#define JSON_True 1
-#define JSON_NULL 2
-#define JSON_Number 3
-#define JSON_String 4
-#define JSON_Array 5
-#define JSON_Object 6
-
-#define MAXDEPTH 3
-#define VALUESIZE 20
-
-// Private typedef
-
-/* The JSON structure: */
-typedef struct JSON {
-	int8_t type; // The type of the item, as above.
-	uint8_t index; // Array index (only applicable for arrays obviously)
-	char name[VALUESIZE];
-	char valuestring[VALUESIZE];			/* The item's string, if type==JSON_String */
-	int valueint;				/* The item's number, if type==JSON_Number */
-} JSON_t;
-
-// Private functions
-static int8_t loadFile( uint8_t );
-static int8_t saveFile( uint8_t );
-static int8_t selectSong( void );
-//static int8_t parseJSON( const char *value );
-static int8_t handleData( JSON_t *Obj );
-static uint8_t parse_trackStrings(JSON_t *Obj);
-static const char *parse_value(JSON_t *Obj, const char *value);
-static const char *parse_array(JSON_t *Obj, const char *value);
-static const char *parse_object(JSON_t *Obj, const char *value);
-static const char *parse_number(JSON_t *Obj, const char *num);
-static const char *parse_name(JSON_t *Obj, const char *str);
-static const char *parse_string(JSON_t *Obj, const char *str);
-static const char *parse_generic_string(char *item, const char *str);
-static int8_t peek_value(const char *value);
-static const char *skip(const char *in);
-
-const char *JSON_types[7] = {
-	"False"
-	,"True"
-	,"NULL"
-	,"Number"
-	,"String"
-	,"Array"
-	,"Object"
-};
 
 /*---------------------------------------------------------*/
 /* User Provided RTC Function for FatFs module             */
@@ -121,53 +73,145 @@ static void put_rc (FRESULT rc){
 }
 
 
+//TODO Need to modify all these load/save routines to return meaningful error codes for display to user
+//TODO Update save/load to include in/out points in the data
 
-/*
- * Loads a song from SD in JSON format
- * Clears any existing song data.
- * Returns 1 on success.
- */
-int8_t loadSong( void ){
-	uint8_t result;
-	//printf("\nloadSong()");
-	lcd_cursorxy(0,0);
-	lcd_sendStr("Load Song");
-	
-	//Choose file
-	//songIdx = selectSong();
 
-	//Load file
-	result = loadFile(2);
-	lcd_cursorxy(0,3);
-	if(result)
-		lcd_sendStr("Loaded");
-	else
-		lcd_sendStr("Failed");
-	delay_ms(2000);
-	return result; //Success
+// Handles the interface for loading/saving
+// Returns 1=success
+int8_t song_loadOrSave(uint8_t load, InputRingBuffer_t *input){
+	int8_t result = 0;
+	uint8_t btnIdx = 0;
+	lcd_clearBuffer();
+	if(load){
+		printf("Load song");
+	}else{
+		printf("Save song");
+	}
+
+	if(!g_systemState.existanceChecked){
+
+		if(load && g_song.modified){
+			boxOutWithTitle("Warning","Song modified");
+			lcd_render();
+			delay_ms(1000);
+		}
+		// Need to check the SD card to show all the existing songs
+		result = song_checkExistance();
+		if(!result){
+			boxOutWithTitle("Error!","Can't access SD");
+			lcd_render();
+			// Get out of the menu
+			delay_ms(1000);
+			return 1;
+		}
+	}
+
+	displayExistingSongs(load);
+	lcd_render();
+	printf(".");
+
+	// handle input here
+	if(input->steps && countBits((uint32_t)input->steps) == 1){
+		btnIdx = firstBitPos((uint32_t)input->steps);
+
+		printf("Load song:%x = %d", input->steps, btnIdx);
+
+		//Load/save song file
+		setFilename(btnIdx);
+		boxOutWithTitle(load?"Loading...":"Saving...", g_filename);
+		if(load){
+			lcd_render();
+			result = loadSong(btnIdx);
+		}else{
+			lcd_render();
+			result = saveSong(btnIdx);
+		}
+
+		if(result){
+			boxOutWithTitle(load?"Loaded!":"Saved!", g_filename);
+			lcd_render();
+			// Get out of the menu
+			delay_ms(1000);
+			return 1;
+		}else{
+			boxOutWithTitle("Failed!", g_filename);
+		}
+	}
+	return 0;
 }
 
-/*
- * Saves a song to SD in JSON format
- * Returns  on success.
- */
-int8_t saveSong( void ){
-	uint8_t result;
-	//printf("\nsaveSong()");
-	lcd_cursorxy(0,0);
-	lcd_sendStr("Save Song:");
-	lcd_cursorxy(0,1);
-	
-	//Choose file
 
-	//Save file
-	result = saveFile(2);
-	lcd_cursorxy(0,2);
-	if(result)
-		lcd_sendStr("Saved");
-	else
-		lcd_sendStr("Failed");
-	return result; //Success
+void setFilename(uint8_t songIdx){
+	xsprintf(g_filename, "/song%d.jsn", songIdx);
+}
+
+// Mounts the Filesytem.
+// Any return value other than zero is an error
+static uint8_t mountfs(){
+	uint8_t fresult;
+	printf("\nmountfs()");
+
+	// Mount FS
+	fresult = f_mount(&Fatfs, "", 1);
+	if(fresult){
+		printf("\nCan't mount SD. FRESULT:%d",fresult);
+		put_rc(fresult);
+	}
+
+	printf(" Mounted:%u", fresult);
+	return fresult;
+}
+
+
+int8_t song_checkExistance( void ){
+	uint8_t dstatus;
+	uint8_t idx = 0;
+	FILINFO file_info;
+
+	// I have an issue with SPI. Think I'm checking the wrong flag.
+	// disk_initialize() - used in mountfs() gets stuck in a loop.
+	// disabling and reenabling the SPI module sorts the problem
+	// TODO: Fix this so I don't need to toggle the SPI module
+	SpiChnEnable(SPI_CHANNEL2, 0);
+//	printf("\nsong_checkExistance()");
+	SpiChnEnable(SPI_CHANNEL2, 1);
+	dstatus = mountfs();
+	printf("\nmountfs():%u", dstatus);
+	if(dstatus){
+		// Failed
+		return 0;
+	}
+
+	g_songExistanceBits = 0;
+
+//	printf("\nChecking each song");
+
+	for(idx=1; idx<=16; idx++){
+		// Check each song in turn
+		g_songExistanceBits <<= 1;
+		setFilename(idx);
+//		printf("\n%d \"%s\"", idx, g_filename);
+		dstatus = f_stat(g_filename, &file_info);
+//		printf(" [%u]", dstatus);
+		if(!dstatus && file_info.fsize > 0 && file_info.fsize <= MAXFILESIZE){
+//			printf(", %6d bytes", (uint32_t)file_info.fsize);
+//			printf("1");
+			g_songExistanceBits++;
+//		}else{
+//			printf("0");
+		}
+//		if(idx % 4 == 0){
+//			printf(".");
+//		}
+//		dstatus = f_close(&file_obj);
+//		printf("\nClose file: %u", dstatus);
+	}
+	// Indicate that we have checked the SD
+	// This gets reset on every menu entry.
+	// Should be sufficient to handle occasional card changes.
+	g_systemState.existanceChecked = 1;
+	return 1;
 }
 
 /*
@@ -177,37 +221,34 @@ int8_t saveSong( void ){
  * Looks for files names songX.jsn where X is 0-15 and provided by arg.songIdx
  * returns 1 to indicate success
 */
-static int8_t loadFile( uint8_t songIdx ){
+int8_t loadSong( uint8_t songIdx ){
 	uint8_t dstatus;
 
-	xsprintf(g_filename, "/song%d.jsn", songIdx);
-	lcd_cursorxy(0,1);
-	//printf("File:%s", g_filename);
-	xprintf("%s", g_filename);
-
-	if(disk_initialize(0)){
-	  lcd_sendStr("\nNo Disk!");
-		return 0;
-	}
-	if(f_mount(0, &Fatfs)){
-	  lcd_sendStr("\nNo Mount!");
+	setFilename(songIdx);
+	// xsprintf(g_filename, "/song%d.jsn", songIdx);
+	printf("\nloadSong() file:%s", g_filename);
+	dstatus = mountfs();
+	if(dstatus){
+		// Failed
 		return 0;
 	}
 
+	// Open the file for reading
 	dstatus = f_open(&file_obj, g_filename, FA_READ);
 	if(dstatus){
+		printf("\nCan't open file. FRESULT:%d",dstatus);
 		put_rc(dstatus);
 		return 0;
 	}
 
-	lcd_cursorxy(0,2);
+	// More checks
 	if(file_obj.fsize >= MAXFILESIZE){
-		xprintf("\nToo big:%6db", file_obj.fsize);
-		printf("\nToo large:%6d bytes ", file_obj.fsize);
+		//xprintf("\nToo big:%6db", file_obj.fsize);
+		printf("\nToo large:%6d bytes ", (uint32_t)file_obj.fsize);
 		return 0;
 	}
-	xprintf("\nSize %4dbytes", file_obj.fsize);
-	printf("\nLoaded:%6d bytes ", file_obj.fsize);
+	//xprintf("\nSize %4dbytes", file_obj.fsize);
+	printf("\nLoaded:%6d bytes ", (uint32_t)file_obj.fsize);
 
 	f_gets(g_buffer.complete, file_obj.fsize, &file_obj);
 	printf("\nFile read into buffer");
@@ -215,7 +256,12 @@ static int8_t loadFile( uint8_t songIdx ){
 	printf("\nFile closed");
 
 	dstatus = parseJSON(g_buffer.complete);
-
+	if(dstatus){
+		g_songNumber = (int8_t)songIdx;		
+	}else{
+		// Failed
+		g_songNumber = -1;		
+	}
 	return dstatus;
 }
 
@@ -226,37 +272,51 @@ static int8_t loadFile( uint8_t songIdx ){
  * Writes files named songX.jsn where X is 0-15 and provided by arg.songIdx
  * returns 1 to indicate success
 */
-static int8_t saveFile( uint8_t songIdx){
+int8_t saveSong( uint8_t songIdx){
 	uint8_t pattern, track, step, dstatus;
 
-	lcd_clearRam();
-	lcd_cursorxy(0,0);
-	xprintf("Save:");
+	setFilename(songIdx);
 
-	xsprintf(g_filename, "/song%d.jsn", songIdx);
+	printf("Save file:%s", g_filename);
+	//xprintf("File:%s", g_filename);
 
-	//printf("File:%s", g_filename);
-	xprintf("File:%s", g_filename);
-
-	if(disk_initialize(0)){
-	  lcd_sendStr("\nNo Disk!");
-		return 0;
-	}
-	if(f_mount(0, &Fatfs)){
-	  lcd_sendStr("\nNo Mount!");
+	dstatus = mountfs();
+	if(dstatus){
+		// Failed
 		return 0;
 	}
 
+	// Open the file for writing/creating
 	dstatus = f_open(&file_obj, g_filename, FA_READ | FA_WRITE | FA_CREATE_ALWAYS);
 	if(dstatus){
+		printf("\nCan't open file. FRESULT:%d",dstatus);
 		put_rc(dstatus);
 		return 0;
 	}
+	
 	//f_puts("//JSON Formatted song\r\r{\r\t\"saveformat\": 1,\r", &file_obj);
 	f_puts("{\r\t\"saveformat\": 1,\r", &file_obj);
 	f_printf(&file_obj, "\t\"bpm\": %d,\r", g_song.bpm);
 	f_printf(&file_obj, "\t\"length\": %d,\r", g_song.length+1);
 	f_printf(&file_obj, "\t\"patternlength\": %d,\r", g_song.patternLength+1);
+	f_printf(&file_obj, "\t\"swing\": %d,\r", g_song.swing);
+
+	// Save the track volumes
+	f_printf(&file_obj, "\t\"trackvolumes\": [");
+	for(track=0; track<=TRACKCOUNT; track++){
+		if(track>0) f_puts(",", &file_obj);
+		f_printf(&file_obj, "%d", g_song.volume[track]);
+	}
+	f_puts("],\r", &file_obj);
+
+	// Save the track ratemods
+	f_printf(&file_obj, "\t\"trackrates\": [");
+	for(track=0; track<=TRACKCOUNT; track++){
+		if(track>0) f_puts(",", &file_obj);
+		f_printf(&file_obj, "%d", g_song.ratemod[track]);
+	}
+	f_puts("],\r", &file_obj);
+
 	f_puts("\t\"patterns\": [\r", &file_obj);
 	
 	for(pattern=0; pattern<=g_song.length; pattern++){
@@ -286,419 +346,12 @@ static int8_t saveFile( uint8_t songIdx){
 
 	f_puts("\t]\r", &file_obj);
 	f_puts("}\r", &file_obj);
-	f_close(&file_obj);	
-	return 1;
-}
+	f_close(&file_obj);
 
-
-/*
- * Allows you to select 1 of 16 songs to save/load
- * Song selection is via the step buttons
- */
-static int8_t selectSong( void ){
-	InputRingBuffer_t input, previnput;
-	int8_t loop = 1;
-	previnput.complete = 0x00000000;
-	int8_t songIdx = 0;
-
-	//lcd_cursorxy(0,1);
-	//lcd_sendStr("Select");
-	/*
-	//Wait for user to select a song number (step button) or press menu to exit
-	while(loop){
-		//Process the input ring buffer
-		input = gatherInput();
-
-		if(input.complete != previnput.complete){
-			lcd_cursorxy(0,3);
-			lcd_sendBitGfx(input.steps, 1);
-			lcd_cursorxy(0,4);
-			lcd_sendBitGfx(input.buttons, 1);
-
-			//Important stuff first
-			if(input.menu){
-				loop = 0;
-				toggleMenu();
-			}
-
-			//Selection of song
-			if(input.steps > 0 && input.steps != previnput.steps){
-				//Step buttons set the beats
-			}
-			//Copy state over to prevstate for comparison next iter
-			previnput = input;
-		}//if
-
-	}//while
-	*/
-	return songIdx;
-}
-
-
-/* JSON Parsing functions for loading data */
-
-
-/*
-	Handles the data as it is found. Allows us to store or discard it.
-	Looks at the Obj
-	Need to do something with errors...
-*/
-static int8_t handleData( JSON_t *Obj ){
-	char name[VALUESIZE] = "";
-	char *ptr;
-	uint8_t value;
-	//printf("\nDepth[%d].key[%d] {%6s}:\"%s\"\t", 0, Obj->index, JSON_types[Obj->type], Obj->name);
-
-	switch(Obj->type){
-		case JSON_Number: {
-			//printf(" Value:%d ", Obj->valueint);
-			break;
-		}
-		case JSON_String: {
-			//printf(" Value:\"%s\" ", Obj->valuestring);
-			break;
-		}
-		case JSON_Object:
-		case JSON_Array: {
-			//printf(" See child ");
-			break;
-		}
-		default: {
-			//printf(" [Unknown type] ");
-		}
-	}
-
-	if(strcmp(Obj->name, "saveformat") == 0){
-			if(Obj->type != JSON_Number || Obj->valueint != 1) return 0; //Not the save format I'm expecting
-			//printf("Ok");
-	}else if(strcmp(Obj->name, "bpm") == 0){
-			if(Obj->type != JSON_Number || Obj->valueint < BPMMIN || Obj->valueint > BPMMAX) return 0; //Wrong type or out of range
-			g_song.bpm = Obj->valueint;
-			//printf("Ok");
-	}else if(strcmp(Obj->name, "length") == 0){
-			if(Obj->type != JSON_Number || Obj->valueint < 1 || Obj->valueint > SONGLENMAX+1) return 0; //Wrong type or out of range
-			g_song.length = Obj->valueint-1; // We save using human friendly numbers
-			//printf("Ok");
-	}else if(strcmp(Obj->name, "patternlength") == 0){
-			if(Obj->type != JSON_Number || Obj->valueint < 1 || Obj->valueint > PATTERNLENGTHMAX+1) return 0; //Wrong type or out of range
-			g_song.patternLength = Obj->valueint-1;
-			//printf("Ok");
-	}else if(strcmp(Obj->name, "patterns") == 0){
-			//Start of patterns
-			if(Obj->type != JSON_Array) return 0; //Wrong type
-			g_song.pattern = 0;
-			g_song.track = 0;
-			//printf("Ok");
-	}else if(strncmp(Obj->name, "patterns.", 9) == 0){
-			/*
-				An array inside the patterns obj
-				Try to determine the index and depth
-				Should be stored in the name eg "patterns.001.002"
-			*/
-			//strtok is destructive so work on a copy
-			strcpy(name, Obj->name);
-			// Discard the first token : Should be "patterns"
-			ptr = strtok(name, ".");
-			ptr = strtok(NULL, ".");
-
-			if(ptr){
-				//First index : Pattern
-				value = (uint8_t)atoi(ptr);
-				if(value > SONGLENMAX){
-					//printf("Ignore surplus patterns");
-					return 0; // Too many patterns
-				}
-				if(value > g_song.length){
-					//printf("More patterns than stated");
-					return 0; // Too many patterns
-				}
-				g_song.pattern = value;
-				//printf("\n\tPattern \"%s\" = %d", ptr, value);
-				ptr = strtok(NULL, ".");
-				if(!ptr){
-					// Probably the parent pattern array
-					if(Obj->type != JSON_Array) return 0; //Wrong type
-				}else{
-					//Second index : Track
-					if(Obj->type != JSON_String) return 0; //Wrong type
-					value = (uint8_t)atoi(ptr);
-					//If there are more tracks than we support ignore them
-					if(value > TRACKCOUNT){
-						//printf("Ignore surplus tracks");
-						return 0; // Too many tracks
-					}
-					//printf("\n\tPattern %d, Track %d", g_song.pattern, value);
-					g_song.track = value;
-					//Convert the strings into the track data
-					parse_trackStrings(Obj);
-				}
-			}
-	}else{
-		//printf("Ignore");
-	}
-
+	g_songNumber = (int8_t)songIdx;
 
 	return 1;
-};
-
-/*
-	Converts the track strings from their string format "^" and "-" to a uint16
-	Expects g_song.track and g_song.pattern to already have been set
-	Returns 1 for success, 0 for failure
-*/
-static uint8_t parse_trackStrings(JSON_t *Obj ){
-	char *step;
-	uint8_t ctr = 0;
-	uint16_t trackOutput = 0;
-
-	//printf("\nparse_trackStrings:\"%s\" = ", Obj->valuestring);
-
-//Add some checks to skip writing once declared pattern length reached.
-
-	step = Obj->valuestring;
-	while(*step && ctr++ < g_song.patternLength){
-		trackOutput >>= 1;
-		if(strncmp(step++, "^", 1) == 0){
-			trackOutput |= 0x8000;
-			//printf("1");
-		} else {
-			//printf("0");
-		}
-	}
-	//Set the song data
-	g_song.data[g_song.pattern][g_song.track] = trackOutput;
-	return 1;
-}
-
-
-/* Parse the input text into an unescaped cstring, and populate item. */
-static const char *parse_name(JSON_t *Obj, const char *str){
-	const char *ptr=str;
-	ptr = parse_generic_string(Obj->name, str);
-	return ptr;
-}
-/* Parse the input text into an unescaped cstring, and populate item. */
-static const char *parse_string(JSON_t *Obj, const char *str){
-	const char *ptr=str;
-	ptr = parse_generic_string(Obj->valuestring, str);
-	Obj->type = JSON_String;
-	handleData(Obj);
-	return ptr;
-}
-
-/* Parse the input text into an unescaped cstring, and populate item. */
-static const char *parse_generic_string(char *item, const char *str){
-	//printf("\nparse_string");
-	const char *ptr=str+1;char *ptr2;int len=0;
-	//printf("\nparse_string(%c) ", *str);
-	if (*str!='\"') {return 0;}	/* not a string! */
-
-	while (*ptr!='\"' && *ptr && ++len) if (*ptr++ == '\\') ptr++;	/* Skip escaped quotes. */
-
-	if(len >= VALUESIZE) return 0; /*String too long for buffer*/
-
-	ptr=str+1;ptr2=item;
-	while (*ptr!='\"' && *ptr)
-	{
-		//printf(" %c", *ptr);
-		if (*ptr!='\\') *ptr2++=*ptr++;
-		else
-		{
-			ptr++;
-			switch (*ptr)
-			{
-				case 'b': *ptr2++='\b';	break;
-				case 'f': *ptr2++='\f';	break;
-				case 'n': *ptr2++='\n';	break;
-				case 'r': *ptr2++='\r';	break;
-				case 't': *ptr2++='\t';	break;
-				//removed unicode handling
-				default:  *ptr2++=*ptr; break;
-			}
-			ptr++;
-		}
-	}
-	*ptr2=0;
-	if (*ptr=='\"') ptr++;
-	return ptr;
-}
-
-/* Parser core - when encountering text, process appropriately. */
-static const char *parse_value(JSON_t *Obj, const char *value){
-	//printf("\nparse_value");
-	if (!value)						return 0;	/* Fail on null. */
-	//if (!strncmp(value,"null",4))	{ theValue = "";  return value+4; }
-	//if (!strncmp(value,"false",5))	{ theValue = ""; return value+5; }
-	//if (!strncmp(value,"true",4))	{ theValue = "1";	return value+4; }
-	if (*value=='\"')				{ return parse_string(Obj, value); }
-	if (*value=='-' || (*value>='0' && *value<='9'))	{ return parse_number(Obj, value); }
-	if (*value=='[')				{ return parse_array(Obj, value); }
-	if (*value=='{')				{ return parse_object(Obj, value); }
-
-	return 0;	/* failure. */
-}
-
-/*
-	Peeks at the value to return a JSON_t type
-	Doesn't alter the pointer position
-	Returns a valid JSON_t type index or -1
-*/
-static int8_t peek_value(const char *value){
-	const char *ptr=skip(value);
-	//printf("\npeek");
-	if (!ptr)						return -1;	/* Fail on null. */
-	//if (!strncmp(value,"null",4))	{ theValue = "";  return value+4; }
-	//if (!strncmp(value,"false",5))	{ theValue = ""; return value+5; }
-	//if (!strncmp(value,"true",4))	{ theValue = "1";	return value+4; }
-	if (*ptr=='\"')				{ return 4; }  // String
-	if (*ptr=='-' || (*value>='0' && *value<='9'))	{ return 3; } //Number
-	if (*ptr=='[')				{ return 5; } // Array
-	if (*ptr=='{')				{ return 6; } // Object
-	return -1;	/* failure. */
-}
-
-
-/* Parse the input text to generate a number, and populate the result into item. */
-static const char *parse_number(JSON_t *Obj, const char *num)
-{
-	signed int n=0;
-	signed char sign=1;
-	if (*num=='-') sign=-1,num++;	/* Has sign? */
-	if (*num=='0') num++;			/* is zero */
-	if (*num>='1' && *num<='9')	do	n=(n*10)+(*num++ -'0');	while (*num>='0' && *num<='9');	/* Number? */
-	n=(int)sign*n;
-	Obj->valueint = n;
-	Obj->type = JSON_Number;
-	handleData(Obj);
-	return num;
 }
 
 
 
-/* Build an object from the text. */
-static const char *parse_object(JSON_t *Obj, const char *value){
-	int8_t idx = 0;
-	//printf("\nparse_object");
-	if (*value!='{')	{return 0;}	/* not an object! */
-	Obj->type = JSON_Object;
-	Obj->index = idx;
-	value = skip(value+1);
-	if (*value=='}') return value+1;	/* empty array. */
-
-	//Now we have a name and a value we should look to store it somewhere
-	handleData(Obj);
-
-	//Child values are one object deeper
-	Obj++;
-	Obj->index = idx;
-
-	//Get the name of the first key in the object
-	value = skip(parse_name(Obj, skip(value)));
-	if (!value) return 0;
-
-	//Get the value of the first key
-	if (*value!=':') {return 0;}	/* fail! */
-
-	value=skip(parse_value(Obj, skip(value+1)));	/* skip any spacing, get the value. */
-	if (!value) return 0;
-
-	idx++;
-
-	//Next key (if any)
-	while (*value==','){
-		//Get the name of the next key in the object
-		value = skip(parse_name(Obj, skip(value+1)));
-		if (!value) return 0;
-
-		if (*value!=':') {return 0;}	/* fail! */
-		value = skip(parse_value(Obj, skip(value+1)));	/* skip any spacing, get the value. */
-		if (!value) return 0;
-		Obj->index = idx;
-
-		idx++;
-	}
-
-	if (*value=='}') return value+1;	/* end of array */
-	return 0;	/* malformed. */
-}
-
-/* Build an array from input text. */
-static const char *parse_array(JSON_t *Obj, const char *value){
-	const char *ptr = Obj->name;
-	char name[VALUESIZE] = "";
-	uint8_t len = 0;
-	uint8_t idx = 0;
-
-	if (*value!='[')	{return 0;}	/* not an array! */
-
-	Obj->type = JSON_Array;
-	Obj->valueint = 0;
-	strncpy(Obj->valuestring, "", VALUESIZE);
-
-	while (*ptr++ && (len<VALUESIZE))	len++;	//Get length of current Obj.name
-	//Copy the name here
-	strncpy(name, Obj->name, len);
-
-	value = skip(value+1);
-	if (*value==']') return value+1;	/* empty array. */
-
-	//Array parent
-	handleData(Obj);
-
-	//Child values are one object deeper
-	Obj++;
-	//Make the name of the next object contain the index
-	Obj->index = idx++;
-	snprintf(Obj->name, VALUESIZE, "%s.%02d", name, Obj->index);
-
-
-	value = skip(parse_value(Obj, skip(value)));	/* skip any spacing, get the value. */
-	if (!value) return 0;
-
-	while (*value==','){
-		//Make the name of the next object contain the index
-		Obj->index = idx++;
-		snprintf(Obj->name, VALUESIZE, "%s.%02d", name, Obj->index);
-		value = skip(parse_value(Obj, skip(value+1)));	/* skip any spacing, get the value. */
-		if (!value) return 0;
-	}
-
-	if (*value==']'){
-		return value+1;	/* end of array */
-	}
-	return 0;	/* malformed. */
-}
-
-
-/* Utility to jump whitespace and cr/lf */
-static const char *skip(const char *in) {while (in && *in && (unsigned char)*in<=32) in++; return in;}
-
-
-/*
- * Converts the JSON String into song data
- * Is a very simplified JSON parser (Very simple)
- */
-int8_t parseJSON(const char *value){
-	const char *result = 0;
-
-	//printf("parseJSON() : sizeof(JSON)=%d", sizeof(JSON_t));
-
-	// Create the array of JSON_t Objects here in the stack
-	JSON_t Data[MAXDEPTH+1];
-	// Create pointer to the first one.
-	JSON_t *Obj = &Data[0];
-	printf("\nparseJSON");
-	result = parse_value(Obj, value);
-	if(!result){
-		printf("\n//Failed");
-		return 0;
-	}
-	//Set the counters back to zero
-	g_song.pattern = 0;
-	g_song.step = 0;
-	g_song.track = 0;
-	printf("\n//parseJSON:Success\n");
-	return 1;
-
-
-}

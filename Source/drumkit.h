@@ -1,7 +1,7 @@
 /*
 Auto generated samples Header file for Drum machine
-Author:MCasey. Date:2013-07-16 23:52:51.756000.
-Samples are single channel, 8bit signed PCM
+Author:MCasey. Date:2013-10-29 00:15:58.942308.
+Samples are single channel, 10bit log compressed to 8bit (similar to u-law)
 sampled at a rate of 16kHz.
 */
 
@@ -12,5 +12,7 @@ sampled at a rate of 16kHz.
 
 void loadSamples(void);
 //Completed.
+
+const signed short from8bit_table[256];
 
 #endif

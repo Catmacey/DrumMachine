@@ -14,9 +14,9 @@
 #include <xc.h>
 #include <plib.h>
 #include "diskio.h"
-#include "HardwareConfig.h"
-#include "globals.h"
-#include "SPI.h"
+#include "../HardwareConfig.h"
+#include "../globals.h"
+#include "../SPI.h"
 
 /* Definitions for MMC/SDC command */
 #define CMD0   (0)			/* GO_IDLE_STATE */
@@ -50,6 +50,13 @@
 #define	FCLK_SLOW()			/* Set slow clock (100k-400k) */
 #define	FCLK_FAST()			/* Set fast clock (depends on the CSD) */
 
+/* MMC/SDC card type definitions (CardType) */
+
+#define CT_MMC				0x01
+#define CT_SD1				0x02
+#define CT_SD2				0x04
+#define CT_SDC				(CT_SD1|CT_SD2)
+#define CT_BLOCK			0x08
 
 //#define	FCLK_SLOW()	SPI2BRG = 64		/* Set slow clock (100k-400k) */
 //#define	FCLK_FAST()	SPI2BRG = 2		/* Set fast clock (depends on the CSD) */
@@ -75,7 +82,8 @@ UINT CardType;
 /*-----------------------------------------------------------------------*/
 
 #define xmit_spi(dat) 	SPI_8bitWrite(dat)
-#define rcvr_spi()		SPI_8bitXchng(0xff)
+#define rcvr_spi()			SPI_8bitXchng(0xff)
+//#define rcvr_spi()			SPI_8bitRead()
 //#define rcvr_spi()		xchg_spi(0xff)
 //#define rcvr_spi_m(p)	SPI1BUF = 0xFF; while (!SPI1STATbits.SPIRBF); *(p) = (BYTE)SPI1BUF;
 #define rcvr_spi_m(p)	*(p) = (BYTE)SPI_8bitRead();
@@ -160,7 +168,7 @@ static int rcvr_datablock (	/* 1:OK, 0:Failed */
 	do {							/* Wait for data packet in timeout of 100ms */
 		retry--;
 		token = rcvr_spi();
-		delay_ms(10);
+		delay_ms(1);
 	} while ((token == 0xFF) && retry);
 
 	if(token != 0xFE) return 0;		/* If not valid data token, return with error */
@@ -227,8 +235,8 @@ BYTE send_cmd (
 {
 	BYTE n, res;
 
-	//printf("\nsend_cmd(%3d, 0x%08x)", (cmd & 0x7F), arg);
-
+//	printf("\nsend_cmd(0x%02x=0x%02x, 0x%08x)", cmd, (cmd | 0x40), arg);
+//(cmd & 0x7F)
 	if (cmd & 0x80) {	/* ACMD<n> is the command sequense of CMD55-CMD<n> */
 		cmd &= 0x7F;
 		res = send_cmd(CMD55, 0);
@@ -253,11 +261,14 @@ BYTE send_cmd (
 	/* Receive command response */
 	if (cmd == CMD12) rcvr_spi();	/* Skip a stuff byte when stop reading */
 	n = 10;							/* Wait for a valid response in timeout of 10 attempts */
-	do
+//	printf("res:");
+	do{
 		res = rcvr_spi();
+//		printf("%d:0x%2x ", n, res);
+//		printf(".");
+	}
 	while ((res & 0x80) && --n);
-	
-	//printf(" Ok.");
+//	printf("Res:0x%2X n:%u", res, 10-n);
 
 	return res;			/* Return with the response value */
 }
@@ -274,20 +285,19 @@ BYTE send_cmd (
 /*-----------------------------------------------------------------------*/
 /* Initialize Disk Drive                                                 */
 /*-----------------------------------------------------------------------*/
-
 DSTATUS disk_initialize (
-	BYTE drv		/* Physical drive nmuber (0) */
+	BYTE pdrv		/* Physical drive nmuber (0) */
 )
 {
 	BYTE n, cmd, ty, ocr[4];
 
-	//printf("\ndisk_initialize()");
+	printf("\ndisk_initialize()");
 
-	if (drv) return STA_NOINIT;			/* Supports only single drive */
+	if (pdrv) return STA_NOINIT;			/* Supports only single drive */
 	if (Stat & STA_NODISK) return Stat;	/* No card in the socket */
 
 	//power_on();							/* Force socket power on */
-	//FCLK_SLOW();
+	SPI_SLOW();
 	for (n = 10; n; n--){
 		rcvr_spi();	/* 80 dummy clocks */
 	}
@@ -320,12 +330,13 @@ DSTATUS disk_initialize (
 	deselect();
 	if (ty) {			/* Initialization succeded */
 		Stat &= ~STA_NOINIT;	/* Clear STA_NOINIT */
-		FCLK_FAST();
+		//FCLK_FAST();
 	} else {			/* Initialization failed */
 		power_off();
 	}
 
-	//printf(" Ok.");
+	SPI_FAST();
+	printf("\n//disk_initialize(){Stat:0x%02x, ty:%u, Timer1:%u}", Stat, ty, Timer1);
 
 	return Stat;
 }
@@ -337,10 +348,10 @@ DSTATUS disk_initialize (
 /*-----------------------------------------------------------------------*/
 
 DSTATUS disk_status (
-	BYTE drv		/* Physical drive nmuber (0) */
+	BYTE pdrv		/* Physical drive nmuber (0) */
 )
 {
-	if (drv) return STA_NOINIT;		/* Supports only single drive */
+	if (pdrv) return STA_NOINIT;		/* Supports only single drive */
 	return Stat;
 }
 
@@ -351,13 +362,13 @@ DSTATUS disk_status (
 /*-----------------------------------------------------------------------*/
 
 DRESULT disk_read (
-	BYTE drv,		/* Physical drive nmuber (0) */
-	BYTE *buff,		/* Pointer to the data buffer to store read data */
+	BYTE pdrv,		/* Physical drive nmuber (0) */
+	BYTE* buff,		/* Pointer to the data buffer to store read data */
 	DWORD sector,	/* Start sector number (LBA) */
-	BYTE count		/* Sector count (1..255) */
+	UINT count		/* Sector count */
 )
 {
-	if (drv || !count) return RES_PARERR;
+	if (pdrv || !count) return RES_PARERR;
 	if (Stat & STA_NOINIT) return RES_NOTRDY;
 
 	if (!(CardType & CT_BLOCK)) sector *= 512;	/* Convert to byte address if needed */
@@ -389,13 +400,13 @@ DRESULT disk_read (
 
 #if _READONLY == 0
 DRESULT disk_write (
-	BYTE drv,				/* Physical drive nmuber (0) */
-	const BYTE *buff,		/* Pointer to the data to be written */
+	BYTE pdrv,				/* Physical drive nmuber (0) */
+	const BYTE* buff,		/* Pointer to the data to be written */
 	DWORD sector,			/* Start sector number (LBA) */
-	BYTE count				/* Sector count (1..255) */
+	UINT count				/* Sector count */
 )
 {
-	if (drv || !count) return RES_PARERR;
+	if (pdrv || !count) return RES_PARERR;
 	if (Stat & STA_NOINIT) return RES_NOTRDY;
 	if (Stat & STA_PROTECT) return RES_WRPRT;
 
@@ -428,11 +439,10 @@ DRESULT disk_write (
 /*-----------------------------------------------------------------------*/
 /* Miscellaneous Functions                                               */
 /*-----------------------------------------------------------------------*/
-
 DRESULT disk_ioctl (
-	BYTE drv,		/* Physical drive nmuber (0) */
-	BYTE ctrl,		/* Control code */
-	void *buff		/* Buffer to send/receive data block */
+	BYTE pdrv,		/* Physical drive nmuber (0) */
+	BYTE cmd,		/* Control code */
+	void* buff		/* Buffer to send/receive data block */
 )
 {
 	DRESULT res;
@@ -440,11 +450,11 @@ DRESULT disk_ioctl (
 	DWORD csize;
 
 
-	if (drv) return RES_PARERR;
+	if (pdrv) return RES_PARERR;
 	if (Stat & STA_NOINIT) return RES_NOTRDY;
 
 	res = RES_ERROR;
-	switch (ctrl) {
+	switch (cmd) {
 		case CTRL_SYNC :	/* Flush dirty buffer if present */
 			if (select()) {
 				deselect();

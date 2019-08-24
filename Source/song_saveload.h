@@ -15,9 +15,12 @@ extern "C" {
 #include <stdint.h>
 
 /** P R O T O T Y P E S ******************************************************/
-int8_t loadSong( void );
-int8_t saveSong( void );
-int8_t parseJSON( const char *value );  // Temporarily public for testing
+int8_t loadSong( uint8_t songindex );
+int8_t saveSong( uint8_t songindex );
+int8_t song_checkExistance( void );
+int8_t song_loadOrSave(uint8_t load, InputRingBuffer_t *input);
+// Allows you to set, and therefor see waht the filename will be
+void setFilename( uint8_t songIdx );
 
 #ifdef	__cplusplus
 }

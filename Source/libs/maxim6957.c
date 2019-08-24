@@ -9,8 +9,8 @@
 /****** I N C L U D E S **********************************************************/
 #include <xc.h>
 #include <plib.h>
-#include "HardwareConfig.h"
-#include "SPI.h"
+#include "../HardwareConfig.h"
+#include "../SPI.h"
 #include "maxim6957.h"
 
 /****** V A R I A B L E S ********************************************************/
@@ -18,7 +18,7 @@
 //Use a bit of ram to keep track of segment currents
 //each nibble is represents a port, but we have to write a byte at a time.
 //Defaults on power up to 0
-unsigned char max6957_segcurrent[14] = {0,0,0,0,0,0,0,0,0,0,0,0,0,0};
+static unsigned char max6957_portcurrent[14] = {0,0,0,0,0,0,0,0,0,0,0,0,0,0};
 
 /*
 *	Writes a 16bit word as two seperate bytes.
@@ -39,12 +39,24 @@ void max6957_config(unsigned char config){
 }
 
 /*
+	port >= 4 <= 31
+	value bool [0|1]
+	Turns a segement on or off
+*/
+void max6957_setPortState(unsigned char port, unsigned char state){
+	//Validate port
+	if(port > 31 || port < 4) return;
+	if(state != 0) state = 1;	
+	max6957_write(MAX6957_ADDR_P0 + port, state);
+}
+
+/*
 	Sets a nibble in the segment current registers
 	port >= 4 <= 31
 	value >= 0 <= 15
 	Uses max6957_segcurrent array to store current values
 */
-void max6957_setSegCurrent(unsigned char port, unsigned char value){
+void max6957_setPortCurrent(unsigned char port, unsigned char value){
 	unsigned char offset = 0;
 	//Validate port
 	if(port > 31 || port < 4) return;
@@ -56,11 +68,35 @@ void max6957_setSegCurrent(unsigned char port, unsigned char value){
 	if(port & 0b00000001){
 		//Odd ports : high nibble
 		value <<= 4;
- 		max6957_segcurrent[offset] = (max6957_segcurrent[offset] & 0b00001111) | value;
+ 		max6957_portcurrent[offset] = (max6957_portcurrent[offset] & 0b00001111) | value;
 	}else{
 		//even ports : low nibble
-		max6957_segcurrent[offset] = (max6957_segcurrent[offset] & 0b11110000) | value;
+		max6957_portcurrent[offset] = (max6957_portcurrent[offset] & 0b11110000) | value;
 	}
-	max6957_write(MAX6957_ADDR_C5_4 + offset, max6957_segcurrent[offset]);
+	max6957_write(MAX6957_ADDR_C5_4 + offset, max6957_portcurrent[offset]);
 }
+
+/*
+	gets a nibble in the segment current registers
+	port >= 4 <= 31
+	value >= 0 <= 15
+	Uses max6957_segcurrent array to store current values
+*/
+unsigned char max6957_getPortCurrent(unsigned char port){
+	unsigned char offset = 0;
+	//Validate port
+	if(port > 31 || port < 4) return 0;
+
+	//Work out which reg to write to
+	offset = (port - 4) / 2;
+	//prepare value
+	if(port & 0b00000001){
+		//Odd ports : high nibble
+ 		return (max6957_portcurrent[offset] >> 4);
+	}else{
+		//even ports : low nibble
+		return (max6957_portcurrent[offset] & 0b00001111);
+	}
+}
+
 
